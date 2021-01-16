@@ -83,7 +83,7 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 	return jobId, allocIds, nil
 }
 
-func logs(color int, args Args, allocId string, stop <-chan bool, wg *sync.WaitGroup) {
+func logs(color int, args Args, allocId string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(100 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
@@ -101,27 +101,21 @@ func logs(color int, args Args, allocId string, stop <-chan bool, wg *sync.WaitG
 
 	reader := bufio.NewReader(resp.Body)
 	for {
-		select {
-		case <-stop:
-			fmt.Println("log for allocation ", Color(color, allocId), "stopped")
+		line, err := reader.ReadBytes('\n')
+		if err == io.EOF {
+			fmt.Println(Color(color, allocId), "done")
 			return
-		default:
-			line, err := reader.ReadBytes('\n')
+		}
+		if err != nil {
 			if err == io.EOF {
 				fmt.Println(Color(color, allocId), "done")
-				return
+			} else {
+				fmt.Println("Error reading log body for allocation "+Color(color, allocId)+":", err)
 			}
-			if err != nil {
-				if err == io.EOF {
-					fmt.Println(Color(color, allocId), "done")
-				} else {
-					fmt.Println("Error reading log body for allocation "+Color(color, allocId)+":", err)
-				}
-				return
-			}
-
-			fmt.Println(Color(color, prefix, strings.TrimRight(string(line), "\n")))
+			return
 		}
+
+		fmt.Println(Color(color, prefix, strings.TrimRight(string(line), "\n")))
 	}
 }
 
@@ -147,7 +141,6 @@ func main() {
 	fmt.Println("Number of allocations:", len(allocs))
 
 	sigs := make(chan os.Signal, 1)
-	stop := make(chan bool, len(allocs))
 	var wg sync.WaitGroup
 
 	wg.Add(len(allocs))
@@ -157,14 +150,14 @@ func main() {
 		colIdx := nextColor()
 		fmt.Println(Color(colIdx, "  allocation id:", allocId))
 
-		go logs(colIdx, args, allocId, stop, &wg)
+		go logs(colIdx, args, allocId, &wg)
 	}
 
 	go func() {
 		sig := <-sigs
 		fmt.Println("\nreceived signal:", sig)
 		for i := 0; i < len(allocs); i++ {
-			wg.Done() // artifically set WaitGroup counter to zero
+			wg.Done() // artifically set WaitGroup counter to zero so app can exit
 		}
 	}()
 

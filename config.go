@@ -24,7 +24,7 @@ func processCmdLineArgs() Args {
 	jobPrefix := flag.String("job-prefix", "unknown", "job prefix (should uniquely identify a job)")
 	task := flag.String("task", "", "Task id. Set if different from job id")
 	typ := flag.String("type", "stdout", "stdout or stderr")
-	follow := flag.Bool("no-follow", false, "if set pulls logs and stops")
+	follow := flag.Bool("follow", false, "if set pulls logs and stops")
 	tail := flag.Int("tail", 10, "shows the logs content with offsets relative to the end of the logs")
 
 	flag.Parse()

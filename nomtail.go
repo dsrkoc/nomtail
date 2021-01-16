@@ -9,7 +9,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -76,27 +75,6 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 	}
 
 	return jobId, allocIds, nil
-}
-
-type Args struct {
-	Nomad     string
-	JobPrefix string
-	Task      string
-}
-
-func processCmdLineArgs() Args {
-	nomadDefault := os.Getenv("NOMAD_ADDR")
-	if nomadDefault == "" {
-		nomadDefault = "http://localhost:4646"
-	}
-
-	nomad := flag.String("nomad", nomadDefault, "nomad URI")
-	jobPrefix := flag.String("job-prefix", "unknown", "job prefix (should uniquely identify a job)")
-	task := flag.String("task", "", "Task id. Set if different from job id")
-
-	flag.Parse()
-
-	return Args{Nomad: *nomad, JobPrefix: *jobPrefix, Task: *task}
 }
 
 // main -----------------------

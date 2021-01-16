@@ -7,13 +7,19 @@ package main
 */
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 )
 
 type Id struct { // both JSON structures contain "ID" field
@@ -38,7 +44,7 @@ func getIds(url string) ([]Id, error) {
 	return ids, e3
 }
 
-// allocationIds returns an array of allocation identifiers.
+// allocationIds returns a job indentifier and an array of that job's allocation identifiers.
 // It expects an address (e.g. address=http://locaohost:4646) and job prefix
 func allocationIds(nomadAddress string, jobPrefix string) (string, []string, error) {
 	queryJobs := nomadAddress + "/v1/jobs?prefix=" + jobPrefix
@@ -77,13 +83,55 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 	return jobId, allocIds, nil
 }
 
+func logs(color int, args Args, allocId string, stop <-chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
+	time.Sleep(100 * time.Millisecond) // wait to allow main to print all the info before http request is sent
+
+	url := fmt.Sprintf(
+		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
+		args.Nomad, allocId, args.Follow, args.Type, args.Task)
+	prefix := fmt.Sprintf("[%s] ", strings.Split(allocId, "-")[0])
+
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error getting log for allocation "+Color(color, allocId)+":", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	reader := bufio.NewReader(resp.Body)
+	for {
+		select {
+		case <-stop:
+			fmt.Println("log for allocation ", Color(color, allocId), "stopped")
+			return
+		default:
+			line, err := reader.ReadBytes('\n')
+			if err == io.EOF {
+				fmt.Println(Color(color, allocId), "done")
+				return
+			}
+			if err != nil {
+				if err == io.EOF {
+					fmt.Println(Color(color, allocId), "done")
+				} else {
+					fmt.Println("Error reading log body for allocation "+Color(color, allocId)+":", err)
+				}
+				return
+			}
+
+			fmt.Println(Color(color, prefix, strings.TrimRight(string(line), "\n")))
+		}
+	}
+}
+
 // main -----------------------
 
 func main() {
 	nextColor := NextIndexFn()
 	args := processCmdLineArgs()
 
-	fmt.Printf("- getting job allocations from %s with job prefix '%s'\n", args.Nomad, args.JobPrefix)
+	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", args.Nomad, args.JobPrefix)
 
 	jobId, allocs, err := allocationIds(args.Nomad, args.JobPrefix)
 	if err != nil {
@@ -97,11 +145,30 @@ func main() {
 
 	fmt.Println("Job Id:", jobId)
 	fmt.Println("Number of allocations:", len(allocs))
+
+	sigs := make(chan os.Signal, 1)
+	stop := make(chan bool, len(allocs))
+	var wg sync.WaitGroup
+
+	wg.Add(len(allocs))
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	for _, allocId := range allocs {
 		colIdx := nextColor()
 		fmt.Println(Color(colIdx, "  allocation id:", allocId))
+
+		go logs(colIdx, args, allocId, stop, &wg)
 	}
 
-	fmt.Println("\n<== Done")
+	go func() {
+		sig := <-sigs
+		fmt.Println("\nreceived signal:", sig)
+		for i := 0; i < len(allocs); i++ {
+			wg.Done() // artifically set WaitGroup counter to zero
+		}
+	}()
+
+	wg.Wait()
+	fmt.Println("<== Done")
 
 }

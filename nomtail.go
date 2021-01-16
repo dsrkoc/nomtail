@@ -21,7 +21,7 @@ type Id struct { // both JSON structures contain "ID" field
 	ID string
 }
 
-// getIds returns byte array of HTTP response body
+// getIds makes HTTP query to Nomad and returns array of Id types
 func getIds(url string) ([]Id, error) {
 	resp, e1 := http.Get(url)
 	if e1 != nil {
@@ -41,7 +41,7 @@ func getIds(url string) ([]Id, error) {
 
 // allocationIds returns an array of allocation identifiers.
 // It expects an address (e.g. address=http://locaohost:4646) and job prefix
-func allocationIds(nomadAddress string, jobPrefix string) ([]string, error) {
+func allocationIds(nomadAddress string, jobPrefix string) (string, []string, error) {
 	queryJobs := nomadAddress + "/v1/jobs?prefix=" + jobPrefix
 	queryAllocs := nomadAddress + "/v1/job/%s/allocations"
 
@@ -49,7 +49,7 @@ func allocationIds(nomadAddress string, jobPrefix string) ([]string, error) {
 
 	jobs, e1 := getIds(queryJobs)
 	if e1 != nil {
-		return nil, e1
+		return "", nil, e1
 	}
 
 	if len(jobs) > 1 {
@@ -58,7 +58,7 @@ func allocationIds(nomadAddress string, jobPrefix string) ([]string, error) {
 			jobIds[i] = job.ID
 		}
 		joined := strings.Join(jobIds, ", ")
-		return nil, errors.New(fmt.Sprintf("%d jobs found for given job prefix '%s' (%s)", len(jobs), jobPrefix, joined))
+		return "", nil, errors.New(fmt.Sprintf("%d jobs found for given job prefix '%s' (%s)", len(jobs), jobPrefix, joined))
 	}
 
 	jobId := jobs[0].ID
@@ -67,7 +67,7 @@ func allocationIds(nomadAddress string, jobPrefix string) ([]string, error) {
 
 	allocs, e2 := getIds(fmt.Sprintf(queryAllocs, jobId))
 	if e2 != nil {
-		return nil, e2
+		return "", nil, e2
 	}
 
 	allocIds := make([]string, len(allocs))
@@ -75,15 +75,16 @@ func allocationIds(nomadAddress string, jobPrefix string) ([]string, error) {
 		allocIds[i] = alloc.ID
 	}
 
-	return allocIds, nil
+	return jobId, allocIds, nil
 }
 
 type Args struct {
 	Nomad     string
 	JobPrefix string
+	Task      string
 }
 
-func processArgs() Args {
+func processCmdLineArgs() Args {
 	nomadDefault := os.Getenv("NOMAD_ADDR")
 	if nomadDefault == "" {
 		nomadDefault = "http://localhost:4646"
@@ -91,28 +92,36 @@ func processArgs() Args {
 
 	nomad := flag.String("nomad", nomadDefault, "nomad URI")
 	jobPrefix := flag.String("job-prefix", "unknown", "job prefix (should uniquely identify a job)")
+	task := flag.String("task", "", "Task id. Set if different from job id")
 
 	flag.Parse()
 
-	return Args{Nomad: *nomad, JobPrefix: *jobPrefix}
+	return Args{Nomad: *nomad, JobPrefix: *jobPrefix, Task: *task}
 }
 
 // main -----------------------
 
 func main() {
-	args := processArgs()
+	nextColor := NextIndexFn()
+	args := processCmdLineArgs()
 
-	fmt.Println(fmt.Sprintf("- getting job allocations from %s with job prefix '%s'", args.Nomad, args.JobPrefix))
+	fmt.Printf("- getting job allocations from %s with job prefix '%s'\n", args.Nomad, args.JobPrefix)
 
-	allocs, err := allocationIds(args.Nomad, args.JobPrefix)
+	jobId, allocs, err := allocationIds(args.Nomad, args.JobPrefix)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 
+	if args.Task == "" { // by default task id is the same as job id
+		args.Task = jobId
+	}
+
+	fmt.Println("Job Id:", jobId)
 	fmt.Println("Number of allocations:", len(allocs))
 	for _, allocId := range allocs {
-		fmt.Println("  allocation id:", allocId)
+		colIdx := nextColor()
+		fmt.Println(Color(colIdx, "  allocation id:", allocId))
 	}
 
 	fmt.Println("\n<== Done")

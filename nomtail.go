@@ -1,11 +1,5 @@
 package main
 
-/*
-    /v1/jobs?prefix=<prefix> -> ID (job)
-		/v1/job/<ID job>/allocations -> ID (allocation)
-		/client/fs/logs/<ID (allocation)>
-*/
-
 import (
 	"bufio"
 	"encoding/json"

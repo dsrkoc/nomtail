@@ -77,13 +77,13 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 	return jobId, allocIds, nil
 }
 
-func logs(color int, args Args, allocId string, wg *sync.WaitGroup) {
+func logs(color int, allocId string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(100 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
 	url := fmt.Sprintf(
 		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
-		args.Nomad, allocId, args.Follow, args.Type, args.Task)
+		Args.Nomad, allocId, Args.Follow, Args.Type, Args.Task)
 	prefix := fmt.Sprintf("[%s] ", strings.Split(allocId, "-")[0])
 
 	resp, err := http.Get(url)
@@ -117,18 +117,17 @@ func logs(color int, args Args, allocId string, wg *sync.WaitGroup) {
 
 func main() {
 	nextColor := NextIndexFn()
-	args := processCmdLineArgs()
 
-	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", args.Nomad, args.JobPrefix)
+	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
 
-	jobId, allocs, err := allocationIds(args.Nomad, args.JobPrefix)
+	jobId, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 
-	if args.Task == "" { // by default task id is the same as job id
-		args.Task = jobId
+	if Args.Task == "" { // by default task id is the same as job id
+		Args.Task = jobId
 	}
 
 	fmt.Println("Job Id:", jobId)
@@ -144,7 +143,7 @@ func main() {
 		colIdx := nextColor()
 		fmt.Println(Color(colIdx, "  allocation id:", allocId))
 
-		go logs(colIdx, args, allocId, &wg)
+		go logs(colIdx, allocId, &wg)
 	}
 
 	go func() {

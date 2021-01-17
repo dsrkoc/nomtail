@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type Args struct {
+type AppArgs struct {
 	Nomad     string
 	JobPrefix string
 	Task      string
@@ -14,27 +14,20 @@ type Args struct {
 	Tail      int
 }
 
-func processCmdLineArgs() Args {
+var Args AppArgs
+
+func init() {
 	nomadDefault := os.Getenv("NOMAD_ADDR")
 	if nomadDefault == "" {
 		nomadDefault = "http://localhost:4646"
 	}
 
-	nomad := flag.String("nomad", nomadDefault, "nomad URI")
-	jobPrefix := flag.String("job-prefix", "unknown", "job prefix (should uniquely identify a job)")
-	task := flag.String("task", "", "Task id. Set if different from job id")
-	typ := flag.String("type", "stdout", "stdout or stderr")
-	follow := flag.Bool("follow", false, "if set pulls logs and stops")
-	tail := flag.Int("tail", 10, "shows the logs content with offsets relative to the end of the logs")
+	flag.StringVar(&Args.Nomad, "nomad", nomadDefault, "nomad URI")
+	flag.StringVar(&Args.JobPrefix, "job-prefix", "unknown", "job prefix (should uniquely identify a job)")
+	flag.StringVar(&Args.Task, "task", "", "Task id. Set if different from job id")
+	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
+	flag.BoolVar(&Args.Follow, "follow", false, "if set pulls logs and stops")
+	flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
 
 	flag.Parse()
-
-	return Args{
-		Nomad:     *nomad,
-		JobPrefix: *jobPrefix,
-		Task:      *task,
-		Type:      *typ,
-		Follow:    *follow,
-		Tail:      *tail,
-	}
 }

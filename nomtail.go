@@ -15,17 +15,17 @@ func main() {
 
 	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
 
-	jobId, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix, Args.RunningOnly)
+	jobID, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix, Args.RunningOnly)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 
 	if Args.Task == "" { // by default task id is the same as job id
-		Args.Task = jobId
+		Args.Task = jobID
 	}
 
-	fmt.Println("Job Id:", jobId)
+	fmt.Println("Job Id:", jobID)
 	fmt.Println("Number of allocations:", len(allocs))
 
 	sigs := make(chan os.Signal, 1)
@@ -34,11 +34,11 @@ func main() {
 	wg.Add(len(allocs))
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	for _, allocId := range allocs {
+	for _, allocID := range allocs {
 		colIdx := nextColor()
-		fmt.Println(Color(colIdx, "  allocation id:", allocId))
+		fmt.Println(Color(colIdx, "  allocation id:", allocID))
 
-		go logs(colIdx, allocId, &wg)
+		go logs(colIdx, allocID, &wg)
 	}
 
 	go func() {

@@ -6,12 +6,13 @@ import (
 )
 
 type AppArgs struct {
-	Nomad     string
-	JobPrefix string
-	Task      string
-	Type      string
-	Follow    bool
-	Tail      int
+	Nomad       string
+	JobPrefix   string
+	Task        string
+	Type        string
+	Follow      bool
+	Tail        int
+	RunningOnly bool
 }
 
 var Args AppArgs
@@ -28,6 +29,7 @@ func init() {
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
 	flag.BoolVar(&Args.Follow, "follow", false, "if set pulls logs and stops")
 	flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
+	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")
 
 	flag.Parse()
 }

@@ -60,8 +60,8 @@ func getAllocs(nomadAddress string, jobID string) ([]alloc, error) {
 // }
 
 // allocationIds returns a job indentifier and an array of that job's allocation identifiers.
-func allocationIds(nomadAddress string, jobPrefix string) (string, []string, error) {
 // It expects an address (e.g. address=http://localhost:4646) and job prefix
+func allocationIds(nomadAddress string, jobPrefix string, stateRunning bool) (string, []string, error) {
 
 	// getting job identifier
 
@@ -92,9 +92,16 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 		return "", nil, e2
 	}
 
-	allocIds := make([]string, len(allocs))
-	for i, alloc := range allocs {
-		allocIds[i] = alloc.ID
+	allocIds := make([]string, 1)
+	for _, alloc := range allocs {
+		id := alloc["ID"].(string)
+		if stateRunning {
+			if readState(alloc) == "running" {
+				allocIds = append(allocIds, id)
+			}
+		} else {
+			allocIds = append(allocIds, id)
+		}
 	}
 
 	return jobID, allocIds, nil

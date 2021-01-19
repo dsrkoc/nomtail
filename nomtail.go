@@ -15,7 +15,7 @@ func main() {
 
 	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
 
-	jobId, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix)
+	jobId, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix, Args.RunningOnly)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)

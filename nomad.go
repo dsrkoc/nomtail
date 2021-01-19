@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,33 +16,56 @@ type Id struct { // both JSON structures contain "ID" field
 	ID string
 }
 
-// getIds makes HTTP query to Nomad and returns array of Id types
-func getIds(url string) ([]Id, error) {
+type alloc map[string]interface{}
+
+func httpGet(url string) ([]byte, error) {
 	resp, e1 := http.Get(url)
 	if e1 != nil {
 		return nil, e1
 	}
 	defer resp.Body.Close()
-
-	body, e2 := ioutil.ReadAll(resp.Body)
-	if e2 != nil {
-		return nil, e2
-	}
-
-	var ids []Id
-	e3 := json.Unmarshal(body, &ids)
-	return ids, e3
+	return ioutil.ReadAll(resp.Body)
 }
 
+func getJobs(nomadAddress string, jobPrefix string) ([]Id, error) {
+	query := nomadAddress + "/v1/jobs?prefix=" + jobPrefix
+
+	_jobs, e1 := httpGet(query)
+	if e1 != nil {
+		return nil, e1
+	}
+
+	var jobs []Id
+	e2 := json.Unmarshal(_jobs, &jobs)
+
+	return jobs, e2
+}
+
+func getAllocs(nomadAddress string, jobID string) ([]alloc, error) {
+	query := nomadAddress + "/v1/job/%s/allocations"
+
+	_allocs, e1 := httpGet(fmt.Sprintf(query, jobID))
+	if e1 != nil {
+		return nil, e1
+	}
+
+	var allocs []alloc
+	e2 := json.Unmarshal(_allocs, &allocs)
+
+	return allocs, e2
+}
+
+// func readState(alc alloc, jobID string) string {
+// 	return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
+// }
+
 // allocationIds returns a job indentifier and an array of that job's allocation identifiers.
-// It expects an address (e.g. address=http://locaohost:4646) and job prefix
 func allocationIds(nomadAddress string, jobPrefix string) (string, []string, error) {
-	queryJobs := nomadAddress + "/v1/jobs?prefix=" + jobPrefix
-	queryAllocs := nomadAddress + "/v1/job/%s/allocations"
+// It expects an address (e.g. address=http://localhost:4646) and job prefix
 
 	// getting job identifier
 
-	jobs, e1 := getIds(queryJobs)
+	jobs, e1 := getJobs(nomadAddress, jobPrefix)
 	if e1 != nil {
 		return "", nil, e1
 	}
@@ -54,14 +76,18 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 			jobIds[i] = job.ID
 		}
 		joined := strings.Join(jobIds, ", ")
-		return "", nil, errors.New(fmt.Sprintf("%d jobs found for given job prefix '%s' (%s)", len(jobs), jobPrefix, joined))
+		return "", nil, fmt.Errorf("%d jobs found for given job prefix '%s' (%s)", len(jobs), jobPrefix, joined)
 	}
 
-	jobId := jobs[0].ID
+	jobID := jobs[0].ID
 
 	// getting list of allocation identifiers
 
-	allocs, e2 := getIds(fmt.Sprintf(queryAllocs, jobId))
+	readState := func(alc alloc) string {
+		return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
+	}
+
+	allocs, e2 := getAllocs(nomadAddress, jobID)
 	if e2 != nil {
 		return "", nil, e2
 	}
@@ -71,21 +97,21 @@ func allocationIds(nomadAddress string, jobPrefix string) (string, []string, err
 		allocIds[i] = alloc.ID
 	}
 
-	return jobId, allocIds, nil
+	return jobID, allocIds, nil
 }
 
-func logs(color int, allocId string, wg *sync.WaitGroup) {
+func logs(color int, allocID string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(100 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
 	url := fmt.Sprintf(
 		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
-		Args.Nomad, allocId, Args.Follow, Args.Type, Args.Task)
-	prefix := fmt.Sprintf("[%s] ", strings.Split(allocId, "-")[0]) // use only the first UUID segment
+		Args.Nomad, allocID, Args.Follow, Args.Type, Args.Task)
+	prefix := fmt.Sprintf("[%s] ", strings.Split(allocID, "-")[0]) // use only the first UUID segment
 
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Error getting log for allocation "+Color(color, allocId)+":", err)
+		fmt.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -94,14 +120,14 @@ func logs(color int, allocId string, wg *sync.WaitGroup) {
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err == io.EOF {
-			fmt.Println(Color(color, allocId), "done")
+			fmt.Println(Color(color, allocID), "done")
 			return
 		}
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println(Color(color, allocId), "done")
+				fmt.Println(Color(color, allocID), "done")
 			} else {
-				fmt.Println("Error reading log body for allocation "+Color(color, allocId)+":", err)
+				fmt.Println("Error reading log body for allocation "+Color(color, allocID)+":", err)
 			}
 			return
 		}

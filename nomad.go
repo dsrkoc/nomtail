@@ -42,9 +42,9 @@ func getJobs(nomadAddress string, jobPrefix string) ([]Id, error) {
 }
 
 func getAllocs(nomadAddress string, jobID string) ([]alloc, error) {
-	query := nomadAddress + "/v1/job/%s/allocations"
+	query := fmt.Sprintf("%s/v1/job/%s/allocations", nomadAddress, jobID)
 
-	_allocs, e1 := httpGet(fmt.Sprintf(query, jobID))
+	_allocs, e1 := httpGet(query)
 	if e1 != nil {
 		return nil, e1
 	}
@@ -59,13 +59,13 @@ func getAllocs(nomadAddress string, jobID string) ([]alloc, error) {
 // 	return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
 // }
 
-// allocationIds returns a job indentifier and an array of that job's allocation identifiers.
+// allocations returns a job indentifier and an array of that job's allocation identifiers.
 // It expects an address (e.g. address=http://localhost:4646) and job prefix
-func allocationIds(nomadAddress string, jobPrefix string, stateRunning bool) (string, []string, error) {
+func allocations() (string, []string, error) {
 
 	// getting job identifier
 
-	jobs, e1 := getJobs(nomadAddress, jobPrefix)
+	jobs, e1 := getJobs(Args.Nomad, Args.JobPrefix)
 	if e1 != nil {
 		return "", nil, e1
 	}
@@ -76,7 +76,7 @@ func allocationIds(nomadAddress string, jobPrefix string, stateRunning bool) (st
 			jobIds[i] = job.ID
 		}
 		joined := strings.Join(jobIds, ", ")
-		return "", nil, fmt.Errorf("%d jobs found for given job prefix '%s' (%s)", len(jobs), jobPrefix, joined)
+		return "", nil, fmt.Errorf("%d jobs found for given job prefix '%s' (%s)", len(jobs), Args.JobPrefix, joined)
 	}
 
 	jobID := jobs[0].ID
@@ -87,15 +87,15 @@ func allocationIds(nomadAddress string, jobPrefix string, stateRunning bool) (st
 		return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
 	}
 
-	allocs, e2 := getAllocs(nomadAddress, jobID)
+	allocs, e2 := getAllocs(Args.Nomad, jobID)
 	if e2 != nil {
 		return "", nil, e2
 	}
 
-	allocIds := make([]string, 1)
+	var allocIds []string
 	for _, alloc := range allocs {
 		id := alloc["ID"].(string)
-		if stateRunning {
+		if Args.RunningOnly {
 			if readState(alloc) == "running" {
 				allocIds = append(allocIds, id)
 			}

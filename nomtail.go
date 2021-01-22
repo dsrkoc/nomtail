@@ -11,11 +11,11 @@ import (
 // main -----------------------
 
 func main() {
-	nextColor := NextIndexFn()
+	nextColor := NextColorIndexFn()
 
 	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
 
-	jobID, allocs, err := allocationIds(Args.Nomad, Args.JobPrefix, Args.RunningOnly)
+	jobID, allocs, err := allocations()
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)

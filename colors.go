@@ -5,12 +5,12 @@ import (
 	"math/rand"
 )
 
-// NextIndexFn returns function that produces next color index
+// NextColorIndexFn returns function that produces next color index
 // to be used with the Color() function.
 // The reson why an index producing function is returned, rather than
 // index itself is that the returned function closes over the index
 // state.
-func NextIndexFn() func() int {
+func NextColorIndexFn() func() int {
 	i := 0
 
 	return func() int {

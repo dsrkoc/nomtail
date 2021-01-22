@@ -16,7 +16,7 @@ type Id struct { // both JSON structures contain "ID" field
 	ID string
 }
 
-type alloc map[string]interface{}
+type alloc = map[string]interface{}
 
 func httpGet(url string) ([]byte, error) {
 	resp, e1 := http.Get(url)

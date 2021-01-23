@@ -11,7 +11,7 @@ import (
 // main -----------------------
 
 func main() {
-	nextColor := NextColorIndexFn()
+	nextColor := NextColorIndexFn(Args.NoColor)
 
 	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
 

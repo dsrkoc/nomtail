@@ -11,7 +11,7 @@ type AppArgs struct {
 	Task        string
 	Type        string
 	Follow      bool
-	Tail        int
+	// Tail        int
 	RunningOnly bool
 	NoColor     bool
 }
@@ -28,8 +28,8 @@ func init() {
 	flag.StringVar(&Args.JobPrefix, "job-prefix", "unknown", "job prefix (should uniquely identify a job)")
 	flag.StringVar(&Args.Task, "task", "", "Task id. Set if different from job id")
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
-	flag.BoolVar(&Args.Follow, "follow", false, "if set pulls logs and stops")
-	flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
+	flag.BoolVar(&Args.Follow, "follow", false, "if set streams logs continually")
+	// flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
 	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")
 	flag.BoolVar(&Args.NoColor, "no-color", false, "if set disables coloring of log lines")
 

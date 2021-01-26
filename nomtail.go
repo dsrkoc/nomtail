@@ -13,7 +13,7 @@ import (
 func main() {
 	nextColor := NextColorIndexFn(Args.NoColor)
 
-	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Nomad, Args.JobPrefix)
+	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Address, Args.JobPrefix)
 
 	jobID, allocs, err := allocations()
 	if err != nil {

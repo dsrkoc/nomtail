@@ -65,7 +65,7 @@ func allocations() (string, []string, error) {
 
 	// getting job identifier
 
-	jobs, e1 := getJobs(Args.Nomad, Args.JobPrefix)
+	jobs, e1 := getJobs(Args.Address, Args.JobPrefix)
 	if e1 != nil {
 		return "", nil, e1
 	}
@@ -87,7 +87,7 @@ func allocations() (string, []string, error) {
 		return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
 	}
 
-	allocs, e2 := getAllocs(Args.Nomad, jobID)
+	allocs, e2 := getAllocs(Args.Address, jobID)
 	if e2 != nil {
 		return "", nil, e2
 	}
@@ -113,7 +113,7 @@ func logs(color int, allocID string, wg *sync.WaitGroup) {
 
 	url := fmt.Sprintf(
 		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
-		Args.Nomad, allocID, Args.Follow, Args.Type, Args.Task)
+		Args.Address, allocID, Args.Follow, Args.Type, Args.Task)
 	prefix := fmt.Sprintf("[%s] ", strings.Split(allocID, "-")[0]) // use only the first UUID segment
 
 	resp, err := http.Get(url)

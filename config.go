@@ -6,14 +6,14 @@ import (
 )
 
 type AppArgs struct {
-	Nomad       string
+	Address     string
 	JobPrefix   string
 	Task        string
 	Type        string
 	Follow      bool
-	// Tail        int
 	RunningOnly bool
 	NoColor     bool
+	// Tail        int
 }
 
 var Args AppArgs
@@ -24,7 +24,7 @@ func init() {
 		nomadDefault = "http://localhost:4646"
 	}
 
-	flag.StringVar(&Args.Nomad, "nomad", nomadDefault, "nomad URI")
+	flag.StringVar(&Args.Address, "address", nomadDefault, "nomad's address")
 	flag.StringVar(&Args.JobPrefix, "job-prefix", "unknown", "job prefix (should uniquely identify a job)")
 	flag.StringVar(&Args.Task, "task", "", "Task id. Set if different from job id")
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")

@@ -2,23 +2,22 @@ Nomtail
 =======
 
 Application that aggregates (follow) logs from multiple Nomad allocations
-into one output stream. This is similar to running `nomad logs -f <alloc-id>`
+into one output stream. This is similar to running `nomad alloc logs -f <allocation>`
 but for multiple allocations.
 
 Installation
 ------------
 
-Download the *nomtail* file from the [https://github.com/dsrkoc/nomtail/releases](releases)
+Download the *nomtail* file from the [releases](https://github.com/dsrkoc/nomtail/releases)
 section for your platform and run it.
 
 Usage
 -----
 
-For running `nomad alloc logs` one needs allocation id (or at least identifier's unique prefix).
-Identifiers change after redeployment so it's not very useful to remember them. To get the
-fresh set of identifiers one would use `nomad job status` with job identifier unique prefix.
+For running `nomad alloc logs` one needs allocation identifier (or at least its unique prefix).
+ To get the fresh set of identifiers one would use `nomad job status` with job identifier's unique prefix.
 
-Nomtail requires just the identifier's prefix:
+Nomtail requires just the job's identifier (or its prefix):
 
 ```
 $ nomtail -job-prefix=my-service
@@ -40,7 +39,7 @@ $ nomtail -help
 Notes
 -----
 
-This project is inspired by [https://github.com/johanhaleby/kubetail](kubetail), which does
+This project is inspired by [kubetail](https://github.com/johanhaleby/kubetail), which does
 the same thing, but for Kubernetes pods. Note that kubetail is written is *bash*, whereas this
 project uses *go* (the reason being your author never used go before and this seemed like a
 nice project to give it a go (bad pun actually intended, sorry)).

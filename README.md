@@ -26,7 +26,7 @@ $ nomtail -job-prefix=my-service
 It reads nomad's address from the `NOMAD_ADDR` environment variable. This can be overridden:
 
 ```
-$ nomtail -job-prefix=my-service -nomad='http://localhost:4646'
+$ nomtail -job-prefix=my-service -address='http://localhost:4646'
 ```
 
 Supply `-help` for additional options:

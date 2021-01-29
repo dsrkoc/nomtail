@@ -27,8 +27,8 @@ func httpGet(url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func getJobs(nomadAddress string, jobPrefix string) ([]Id, error) {
-	query := nomadAddress + "/v1/jobs?prefix=" + jobPrefix
+func getJobs(nomadAddress string, jobPrefix string, namespace string) ([]Id, error) {
+	query := fmt.Sprintf("%s/v1/jobs?prefix=%s&namespace=%s", nomadAddress, jobPrefix, namespace)
 
 	_jobs, e1 := httpGet(query)
 	if e1 != nil {
@@ -65,7 +65,7 @@ func allocations() (string, []string, error) {
 
 	// getting job identifier
 
-	jobs, e1 := getJobs(Args.Address, Args.JobPrefix)
+	jobs, e1 := getJobs(Args.Address, Args.JobPrefix, Args.Namespace)
 	if e1 != nil {
 		return "", nil, e1
 	}

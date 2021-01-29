@@ -10,6 +10,7 @@ type AppArgs struct {
 	JobPrefix   string
 	Task        string
 	Type        string
+	Namespace	string
 	Follow      bool
 	RunningOnly bool
 	NoColor     bool
@@ -28,6 +29,7 @@ func init() {
 	flag.StringVar(&Args.JobPrefix, "job-prefix", "unknown", "job prefix (should uniquely identify a job)")
 	flag.StringVar(&Args.Task, "task", "", "Task id. Set if different from job id")
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
+	flag.StringVar(&Args.Namespace, "namespace", "default", "specifies the target namespace")
 	flag.BoolVar(&Args.Follow, "follow", false, "if set streams logs continually")
 	// flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
 	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")

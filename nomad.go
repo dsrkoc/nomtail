@@ -109,7 +109,7 @@ func allocations() (string, []string, error) {
 
 func logs(color int, allocID string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	time.Sleep(100 * time.Millisecond) // wait to allow main to print all the info before http request is sent
+	time.Sleep(20 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
 	url := fmt.Sprintf(
 		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
@@ -126,10 +126,6 @@ func logs(color int, allocID string, wg *sync.WaitGroup) {
 	reader := bufio.NewReader(resp.Body)
 	for {
 		line, err := reader.ReadBytes('\n')
-		if err == io.EOF {
-			fmt.Println(Color(color, allocID), "done")
-			return
-		}
 		if err != nil {
 			if err == io.EOF {
 				fmt.Println(Color(color, allocID), "done")

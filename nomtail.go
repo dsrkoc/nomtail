@@ -8,8 +8,6 @@ import (
 	"syscall"
 )
 
-// main -----------------------
-
 func main() {
 	nextColor := NextColorIndexFn(Args.NoColor)
 
@@ -50,6 +48,4 @@ func main() {
 	}()
 
 	wg.Wait()
-	fmt.Println("<== Done")
-
 }

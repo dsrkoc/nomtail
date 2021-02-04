@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 )
 
@@ -19,14 +20,20 @@ type AppArgs struct {
 
 var Args AppArgs
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS] <job prefix>\n\nOptions:\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func init() {
 	nomadDefault := os.Getenv("NOMAD_ADDR")
 	if nomadDefault == "" {
 		nomadDefault = "http://localhost:4646"
 	}
 
+	flag.Usage = usage
+
 	flag.StringVar(&Args.Address, "address", nomadDefault, "nomad's address")
-	flag.StringVar(&Args.JobPrefix, "job-prefix", "unknown", "job prefix (should uniquely identify a job)")
 	flag.StringVar(&Args.Task, "task", "", "Task id. Set if different from job id")
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
 	flag.StringVar(&Args.Namespace, "namespace", "default", "specifies the target namespace")
@@ -36,4 +43,11 @@ func init() {
 	flag.BoolVar(&Args.NoColor, "no-color", false, "if set disables coloring of log lines")
 
 	flag.Parse()
+
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	Args.JobPrefix = flag.Arg(0)
 }

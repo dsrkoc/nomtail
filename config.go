@@ -14,7 +14,7 @@ type AppArgs struct {
 	Follow      bool
 	RunningOnly bool
 	NoColor     bool
-	// Tail        int
+	Tail        int
 }
 
 var Args AppArgs
@@ -31,7 +31,7 @@ func init() {
 	flag.StringVar(&Args.Type, "type", "stdout", "stdout or stderr")
 	flag.StringVar(&Args.Namespace, "namespace", "default", "specifies the target namespace")
 	flag.BoolVar(&Args.Follow, "follow", false, "if set streams logs continually")
-	// flag.IntVar(&Args.Tail, "tail", 10, "shows the logs content with offsets relative to the end of the logs")
+	flag.IntVar(&Args.Tail, "tail", 0, "shows the logs content with offsets relative to the end of the logs")
 	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")
 	flag.BoolVar(&Args.NoColor, "no-color", false, "if set disables coloring of log lines")
 

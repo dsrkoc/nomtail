@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -107,16 +108,69 @@ func allocations() (string, []string, error) {
 	return jobID, allocIds, nil
 }
 
+func getLastLog(url string) ([]string, int, error) {
+	type logJSON struct {
+		Offset int
+		Data   string
+	}
+
+	resp, err := httpGet(url)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	logEntries := strings.Split(string(resp), "}{")
+
+	// TODO perhaps it would be better if all logs could be joined instead of only last one taken
+	var lastEntry string
+	if len(logEntries) == 1 {
+		lastEntry = logEntries[0]
+	} else {
+		lastEntry = "{" + logEntries[len(logEntries)-1]
+	}
+
+	var logEntry logJSON
+	if err := json.Unmarshal([]byte(lastEntry), &logEntry); err != nil {
+		return nil, 0, err
+	}
+
+	decodedLog, err := base64.StdEncoding.DecodeString(logEntry.Data)
+	if err != nil {
+		return nil, 0, err
+	}
+	return strings.Split(string(decodedLog), "\n"), logEntry.Offset, nil
+}
+
 func logs(color int, allocID string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(20 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
-	url := fmt.Sprintf(
-		"%s/v1/client/fs/logs/%s?follow=%t&type=%s&task=%s&origin=end&plain=true",
-		Args.Address, allocID, Args.Follow, Args.Type, Args.Task)
 	prefix := fmt.Sprintf("[%s] ", strings.Split(allocID, "-")[0]) // use only the first UUID segment
+	urlFirst := fmt.Sprintf("%s/v1/client/fs/logs/%s?type=%s&task=%s", Args.Address, allocID, Args.Type, Args.Task)
 
-	resp, err := http.Get(url)
+	url := urlFirst
+	if Args.Tail > 0 {
+		// get the first log batch so we can tail it
+		lines, offset, err := getLastLog(urlFirst)
+		if err != nil {
+			fmt.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
+			return
+		}
+		url = fmt.Sprintf("%s&offset=%d", url, offset)
+
+		for _, line := range lines[len(lines)-Args.Tail-1 : len(lines)-1] {
+			fmt.Println((Color(color, prefix, line)))
+		}
+
+		if !Args.Follow { // it would seem that we're done
+			fmt.Println(Color(color, allocID), "done")
+			return
+		}
+	}
+
+	urlRest := fmt.Sprintf("%s&follow=%t&plain=true", url, Args.Follow)
+
+	resp, err := http.Get(urlRest)
 	if err != nil {
 		fmt.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
 		return

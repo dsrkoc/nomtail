@@ -71,7 +71,13 @@ func allocations() (string, []string, error) {
 		return "", nil, e1
 	}
 
-	if len(jobs) > 1 {
+	var jobID string
+	switch len(jobs) {
+	case 0:
+		return "", nil, fmt.Errorf("No jobs are found for given job prefix '%s'", Args.JobPrefix)
+	case 1:
+		jobID = jobs[0].ID
+	default:
 		jobIds := make([]string, len(jobs))
 		for i, job := range jobs {
 			jobIds[i] = job.ID
@@ -79,8 +85,6 @@ func allocations() (string, []string, error) {
 		joined := strings.Join(jobIds, ", ")
 		return "", nil, fmt.Errorf("%d jobs found for given job prefix '%s' (%s)", len(jobs), Args.JobPrefix, joined)
 	}
-
-	jobID := jobs[0].ID
 
 	// getting list of allocation identifiers
 

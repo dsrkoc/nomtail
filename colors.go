@@ -7,6 +7,15 @@ import (
 
 const disableColors = -1
 
+type decoration struct {
+	Bold int
+	Underline int
+	Reversed int
+}
+
+// Decorations represent named values for various color decorations
+var Decorations = decoration{Bold: 1, Underline: 4, Reversed: 7}
+
 // NextColorIndexFn returns function that produces next color index
 // to be used with the Color() function.
 // The reson why an index producing function is returned, rather than
@@ -38,5 +47,11 @@ func Color(index int, args ...interface{}) string {
 		return fmt.Sprint(args...)
 	}
 	template := fmt.Sprintf("\u001b[38;5;%dm%%s\u001b[0m", index)
+	return fmt.Sprintf(template, fmt.Sprint(args...))
+}
+
+// Decor puts color decorations around given arguments
+func Decor(index int, args ...interface{}) string {
+	template := fmt.Sprintf("\u001b[%dm%%s\u001b[0m", index)
 	return fmt.Sprintf(template, fmt.Sprint(args...))
 }

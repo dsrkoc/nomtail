@@ -15,7 +15,7 @@ func main() {
 
 	jobID, allocs, err := allocations()
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println(Decor(Decorations.Bold, "Error:"), err)
 		os.Exit(1)
 	}
 

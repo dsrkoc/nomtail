@@ -20,13 +20,13 @@ For running `nomad alloc logs` one needs allocation identifier (or at least its 
 Nomtail requires just the job's identifier (or its prefix):
 
 ```
-$ nomtail -job-prefix=my-service
+$ nomtail my-service
 ```
 
 It reads nomad's address from the `NOMAD_ADDR` environment variable. This can be overridden:
 
 ```
-$ nomtail -job-prefix=my-service -address='http://localhost:4646'
+$ nomtail -address='http://localhost:4646' my-service
 ```
 
 Supply `-help` for additional options:

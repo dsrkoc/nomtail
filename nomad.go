@@ -158,7 +158,11 @@ func logs(color int, allocID string, wg *sync.WaitGroup) {
 		}
 		url = fmt.Sprintf("%s&offset=%d", url, offset)
 
-		for _, line := range lines[len(lines)-Args.Tail-1 : len(lines)-1] {
+		from := len(lines) - Args.Tail - 1
+		if from < 0 {
+			from = 0
+		}
+		for _, line := range lines[from:len(lines)-1] {
 			fmt.Println((Color(color, prefix, line)))
 		}
 

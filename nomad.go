@@ -19,6 +19,11 @@ type Id struct { // both JSON structures contain "ID" field
 
 type alloc = map[string]interface{}
 
+type allocStruct = struct {
+	ID string
+	State string
+}
+
 func httpGet(url string) ([]byte, error) {
 	resp, e1 := http.Get(url)
 	if e1 != nil {
@@ -62,7 +67,7 @@ func getAllocs(nomadAddress string, jobID string) ([]alloc, error) {
 
 // allocations returns a job indentifier and an array of that job's allocation identifiers.
 // It expects an address (e.g. address=http://localhost:4646) and job prefix
-func allocations() (string, []string, error) {
+func allocations() (string, []allocStruct, error) {
 
 	// getting job identifier
 
@@ -97,19 +102,21 @@ func allocations() (string, []string, error) {
 		return "", nil, e2
 	}
 
-	var allocIds []string
+	var idsStates []allocStruct
 	for _, alloc := range allocs {
-		id := alloc["ID"].(string)
+		var a allocStruct
+		a.ID = alloc["ID"].(string)
+		a.State = readState(alloc)
 		if Args.RunningOnly {
-			if readState(alloc) == "running" {
-				allocIds = append(allocIds, id)
+			if a.State == "running" {
+				idsStates = append(idsStates, a)
 			}
 		} else {
-			allocIds = append(allocIds, id)
+			idsStates = append(idsStates, a)
 		}
 	}
 
-	return jobID, allocIds, nil
+	return jobID, idsStates, nil
 }
 
 func getLastLog(url string) ([]string, int, error) {

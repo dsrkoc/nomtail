@@ -32,11 +32,11 @@ func main() {
 	wg.Add(len(allocs))
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	for _, allocID := range allocs {
+	for _, alloc := range allocs {
 		colIdx := nextColor()
-		fmt.Println(Color(colIdx, "  allocation id:", allocID))
+		fmt.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
 
-		go logs(colIdx, allocID, &wg)
+		go logs(colIdx, alloc.ID, &wg)
 	}
 
 	go func() {

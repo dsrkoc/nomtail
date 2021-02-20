@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -26,6 +27,8 @@ func main() {
 	fmt.Println("Job Id:", jobID)
 	fmt.Println("Number of allocations:", len(allocs))
 
+	print := make(chan logEntry)
+	stopPrint := make(chan bool)
 	sigs := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -36,8 +39,10 @@ func main() {
 		colIdx := nextColor()
 		fmt.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
 
-		go logs(colIdx, alloc.ID, &wg)
+		go logs(colIdx, alloc.ID, print, &wg)
 	}
+
+	go printLog(500 * time.Millisecond, Args.Sort, print, stopPrint)
 
 	go func() {
 		sig := <-sigs
@@ -48,4 +53,5 @@ func main() {
 	}()
 
 	wg.Wait()
+	stopPrint <- true
 }

@@ -152,7 +152,7 @@ func getLastLog(url string) ([]string, int, error) {
 	return strings.Split(string(decodedLog), "\n"), logEntry.Offset, nil
 }
 
-func logs(color int, allocID string, wg *sync.WaitGroup) {
+func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(20 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
@@ -174,7 +174,7 @@ func logs(color int, allocID string, wg *sync.WaitGroup) {
 			from = 0
 		}
 		for _, line := range lines[from:len(lines)-1] {
-			fmt.Println((Color(color, prefix, line)))
+			printLog <- logEntry{color, prefix, line}
 		}
 
 		if !Args.Follow { // it would seem that we're done
@@ -204,6 +204,6 @@ func logs(color int, allocID string, wg *sync.WaitGroup) {
 			return
 		}
 
-		fmt.Println(Color(color, prefix, strings.TrimRight(string(line), "\n")))
+		printLog <- logEntry{color, prefix, strings.TrimRight(string(line), "\n")}
 	}
 }

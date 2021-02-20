@@ -11,11 +11,12 @@ type AppArgs struct {
 	JobPrefix   string
 	Task        string
 	Type        string
-	Namespace	string
+	Namespace   string
 	Follow      bool
 	RunningOnly bool
 	NoColor     bool
 	Tail        int
+	Sort        bool
 }
 
 var Args AppArgs
@@ -40,6 +41,7 @@ func init() {
 	flag.BoolVar(&Args.Follow, "follow", false, "if set streams logs continually")
 	flag.IntVar(&Args.Tail, "tail", 0, "shows the logs content with offsets relative to the end of the logs")
 	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")
+	flag.BoolVar(&Args.Sort, "sort-buffer", false, "if set lexicographically sorts messages buffer before writing to stdout")
 	flag.BoolVar(&Args.NoColor, "no-color", false, "if set disables coloring of log lines")
 
 	flag.Parse()

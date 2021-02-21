@@ -16,9 +16,9 @@ arch=amd64
 GOOS=${os} GOARCH=${arch} go build -o ${buildDir}/nomtail ${rootDir}/*.go
 tar czf ${buildDir}/nomtail_${version}_${os}_${arch}.tar.gz -C ${buildDir} nomtail
 
-# arch=arm64
-# GOOS=${os} GOARCH=${arch} go build -o ${buildDir}/nomtail ${rootDir}/*.go
-# tar czf ${buildDir}/nomtail_${version}_${os}_${arch}.tar.gz -C ${buildDir} nomtail
+arch=arm64
+GOOS=${os} GOARCH=${arch} go build -o ${buildDir}/nomtail ${rootDir}/*.go
+tar czf ${buildDir}/nomtail_${version}_${os}_${arch}.tar.gz -C ${buildDir} nomtail
 
 os=linux
 arch=386

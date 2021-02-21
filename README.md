@@ -29,6 +29,15 @@ It reads nomad's address from the `NOMAD_ADDR` environment variable. This can be
 $ nomtail -address='http://localhost:4646' my-service
 ```
 
+In cases where several allocations frequently output log messages and those messages start with a
+well formatted timestamp (like ISO 8601), messages can be printed in a more chronological order,
+rather than in the order they were received from allocations. Nomtail can be instructed to
+lexicographically sort log messages it keeps in its buffer before outputing them to the stderr:
+
+```
+$ nomtail -sort-buffer my-service
+```
+
 Supply `-help` for additional options:
 
 ```

@@ -4,7 +4,12 @@
 # Building and packaging binaries for supported architectures
 #
 
-version=${1:-v1.0.0}
+if [[ $# -eq 0 ]]; then
+    echo 'Build version needed. Usage: build.sh <version>'
+    exit 1
+fi
+
+version="${1}"
 
 rootDir=$(dirname "${0}")/..
 buildDir=${rootDir}/build

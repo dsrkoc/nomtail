@@ -20,10 +20,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if Args.Task == "" { // by default task id is the same as job id
-		Args.Task = jobID
-	}
-
 	fmt.Println("Job Id:", jobID)
 	fmt.Println("Number of allocations:", len(allocs))
 

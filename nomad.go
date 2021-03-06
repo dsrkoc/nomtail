@@ -82,7 +82,10 @@ func allocations() (string, []allocStruct, error) {
 		return "", nil, fmt.Errorf("No jobs are found for given job prefix '%s'", Args.JobPrefix)
 	case 1:
 		jobID = jobs[0].ID
-	default:
+		if Args.Task == "" { // by default task id is the same as job id
+			Args.Task = jobID
+		}
+		default:
 		jobIds := make([]string, len(jobs))
 		for i, job := range jobs {
 			jobIds[i] = job.ID
@@ -93,8 +96,13 @@ func allocations() (string, []allocStruct, error) {
 
 	// getting list of allocation identifiers
 
-	readState := func(alc alloc) string {
-		return alc["TaskStates"].(alloc)[jobID].(alloc)["State"].(string)
+	readState := func(alc alloc, state *string) error {
+		task := alc["TaskStates"].(alloc)[Args.Task]
+		if task == nil {
+			return fmt.Errorf("Task not found for task name '%s'", Args.Task)
+		}
+		*state = task.(alloc)["State"].(string)
+		return nil
 	}
 
 	allocs, e2 := getAllocs(Args.Address, jobID)
@@ -106,7 +114,10 @@ func allocations() (string, []allocStruct, error) {
 	for _, alloc := range allocs {
 		var a allocStruct
 		a.ID = alloc["ID"].(string)
-		a.State = readState(alloc)
+		var err error
+		if err = readState(alloc, &a.State); err != nil {
+			return "", nil, err
+		}
 		if Args.RunningOnly {
 			if a.State == "running" {
 				idsStates = append(idsStates, a)

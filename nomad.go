@@ -197,7 +197,6 @@ func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan
 		if !Args.Follow { // it would seem that we're done
 		    // don't stop before printer had a chance to print the lines we sent
 			time.Sleep(bufferWaitTime)
-
 			log.Println(Color(color, allocID), "done")
 			return
 		}
@@ -217,6 +216,8 @@ func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			if err == io.EOF {
+				// don't stop before printer had a chance to print the lines we sent
+				time.Sleep(bufferWaitTime)
 				log.Println(Color(color, allocID), "done")
 			} else {
 				log.Println("Error reading log body for allocation "+Color(color, allocID)+":", err)

@@ -24,6 +24,10 @@ func main() {
 	log.Println("Job Id:", jobID)
 	log.Println("Number of allocations:", len(allocs))
 
+	// messages buffer gets emptied to stdout periodically,
+	// every collectMsgsDur milliseconds
+	collectMsgsDur := 500 * time.Millisecond
+
 	print := make(chan logEntry)
 	stopPrint := make(chan bool)
 	sigs := make(chan os.Signal, 1)
@@ -36,10 +40,10 @@ func main() {
 		colIdx := nextColor()
 		log.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
 
-		go logs(colIdx, alloc.ID, print, &wg)
+		go logs(colIdx, alloc.ID, collectMsgsDur, print, &wg)
 	}
 
-	go printLog(500 * time.Millisecond, Args.Sort, print, stopPrint)
+	go printLog(collectMsgsDur, Args.Sort, print, stopPrint)
 
 	go func() {
 		sig := <-sigs

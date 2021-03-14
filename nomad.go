@@ -167,7 +167,7 @@ func getLastLog(url string) ([]string, int, error) {
 	return strings.Split(string(decodedLog), "\n"), logEntry.Offset, nil
 }
 
-func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGroup) {
+func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan<- logEntry, wg *sync.WaitGroup) {
 	defer wg.Done()
 	time.Sleep(20 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
@@ -195,6 +195,9 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 		}
 
 		if !Args.Follow { // it would seem that we're done
+		    // don't stop before printer had a chance to print the lines we sent
+			time.Sleep(bufferWaitTime)
+
 			log.Println(Color(color, allocID), "done")
 			return
 		}

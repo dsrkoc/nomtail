@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -175,7 +176,7 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 		// get the first log batch so we can tail it
 		lines, offset, err := getLastLog(urlFirst)
 		if err != nil {
-			fmt.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
+			log.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
 			return
 		}
 		url = fmt.Sprintf("%s&offset=%d", url, offset)
@@ -189,7 +190,7 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 		}
 
 		if !Args.Follow { // it would seem that we're done
-			fmt.Println(Color(color, allocID), "done")
+			log.Println(Color(color, allocID), "done")
 			return
 		}
 	}
@@ -198,7 +199,7 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 
 	resp, err := http.Get(urlRest)
 	if err != nil {
-		fmt.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
+		log.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -208,9 +209,9 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println(Color(color, allocID), "done")
+				log.Println(Color(color, allocID), "done")
 			} else {
-				fmt.Println("Error reading log body for allocation "+Color(color, allocID)+":", err)
+				log.Println("Error reading log body for allocation "+Color(color, allocID)+":", err)
 			}
 			return
 		}

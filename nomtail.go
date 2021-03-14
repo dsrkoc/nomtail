@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,18 +10,19 @@ import (
 )
 
 func main() {
+	log.SetFlags(0) // log is used as an easier way to print messages other than services' logs to stderr
+
 	nextColor := NextColorIndexFn(Args.NoColor)
 
-	fmt.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Address, Args.JobPrefix)
+	log.Printf("getting job allocations from %s with job prefix '%s'\n", Args.Address, Args.JobPrefix)
 
 	jobID, allocs, err := allocations()
 	if err != nil {
-		fmt.Println(Decor(Decorations.Bold, "Error:"), err)
-		os.Exit(1)
+		log.Fatalln(Decor(Decorations.Bold, "Error:"), err)
 	}
 
-	fmt.Println("Job Id:", jobID)
-	fmt.Println("Number of allocations:", len(allocs))
+	log.Println("Job Id:", jobID)
+	log.Println("Number of allocations:", len(allocs))
 
 	print := make(chan logEntry)
 	stopPrint := make(chan bool)
@@ -33,7 +34,7 @@ func main() {
 
 	for _, alloc := range allocs {
 		colIdx := nextColor()
-		fmt.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
+		log.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
 
 		go logs(colIdx, alloc.ID, print, &wg)
 	}
@@ -42,7 +43,7 @@ func main() {
 
 	go func() {
 		sig := <-sigs
-		fmt.Println("\nreceived signal:", sig)
+		log.Println("\nreceived signal:", sig)
 		for i := 0; i < len(allocs); i++ {
 			wg.Done() // artifically set WaitGroup counter to zero so app can exit
 		}

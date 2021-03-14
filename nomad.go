@@ -151,6 +151,9 @@ func getLastLog(url string) ([]string, int, error) {
 	} else {
 		lastEntry = "{" + logEntries[len(logEntries)-1]
 	}
+	if lastEntry == "" {
+		return nil, 0, nil // nothing to show
+	}
 
 	var logEntry logJSON
 	if err := json.Unmarshal([]byte(lastEntry), &logEntry); err != nil {
@@ -181,12 +184,14 @@ func logs(color int, allocID string, printLog chan<- logEntry, wg *sync.WaitGrou
 		}
 		url = fmt.Sprintf("%s&offset=%d", url, offset)
 
-		from := len(lines) - Args.Tail - 1
-		if from < 0 {
-			from = 0
-		}
-		for _, line := range lines[from:len(lines)-1] {
-			printLog <- logEntry{color, prefix, line}
+		if lines != nil {
+			from := len(lines) - Args.Tail - 1
+			if from < 0 {
+				from = 0
+			}
+			for _, line := range lines[from:len(lines)-1] {
+				printLog <- logEntry{color, prefix, line}
+			}
 		}
 
 		if !Args.Follow { // it would seem that we're done

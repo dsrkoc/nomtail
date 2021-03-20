@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -31,16 +32,25 @@ func main() {
 	print := make(chan logEntry)
 	stopPrint := make(chan bool)
 	sigs := make(chan os.Signal, 1)
-	var wg sync.WaitGroup
 
-	wg.Add(len(allocs))
+	var wg sync.WaitGroup
+	var loggersCount int32
+
+	loggerDoneFn := func () {
+		wg.Done()
+		atomic.AddInt32(&loggersCount, -1)
+	}
+
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for _, alloc := range allocs {
 		colIdx := nextColor()
 		log.Println(" * allocation id:", Color(colIdx, alloc.ID), "("+alloc.State+")")
 
-		go logs(colIdx, alloc.ID, collectMsgsDur, print, &wg)
+		wg.Add(1)
+		loggersCount++ // safe to do this without atomic since loggers sleep a while
+
+		go logs(colIdx, alloc.ID, collectMsgsDur, print, loggerDoneFn)
 	}
 
 	go printLog(collectMsgsDur, Args.Sort, print, stopPrint)
@@ -48,7 +58,9 @@ func main() {
 	go func() {
 		sig := <-sigs
 		log.Println("\nreceived signal:", sig)
-		for i := 0; i < len(allocs); i++ {
+
+		loggersAlive := atomic.LoadInt32(&loggersCount)
+		for i := 0; i < int(loggersAlive); i++ {
 			wg.Done() // artifically set WaitGroup counter to zero so app can exit
 		}
 	}()

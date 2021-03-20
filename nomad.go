@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -167,8 +166,8 @@ func getLastLog(url string) ([]string, int, error) {
 	return strings.Split(string(decodedLog), "\n"), logEntry.Offset, nil
 }
 
-func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan<- logEntry, wg *sync.WaitGroup) {
-	defer wg.Done()
+func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan<- logEntry, done func ()) {
+	defer done()
 	time.Sleep(20 * time.Millisecond) // wait to allow main to print all the info before http request is sent
 
 	prefix := fmt.Sprintf("[%s] ", strings.Split(allocID, "-")[0]) // use only the first UUID segment

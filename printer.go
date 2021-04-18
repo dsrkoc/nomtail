@@ -38,7 +38,17 @@ func printLog(collectDur time.Duration, sortBuffer bool, out <-chan logEntry, st
 				sort.Sort(byLogEntry(buffer))
 			}
 			for _, elem := range(buffer) {
-				fmt.Println(Color(elem.color, elem.prefix, elem.message))
+				shouldPrint := true
+				for _, exclude := range Args.Excludes {
+					shouldPrint = !exclude.MatchString(elem.message)
+					if !shouldPrint { // one exclusion found is quite enough, thank you
+						break
+					}
+				}
+
+				if shouldPrint {
+					fmt.Println(Color(elem.color, elem.prefix, elem.message))
+				}
 			}
 			buffer = nil
 		case <-stop:

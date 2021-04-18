@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 )
+
+type excludeLines []string
 
 type AppArgs struct {
 	Address     string
@@ -17,6 +20,7 @@ type AppArgs struct {
 	NoColor     bool
 	Tail        int
 	Sort        bool
+	Excludes	[]*regexp.Regexp
 }
 
 var Args AppArgs
@@ -24,6 +28,14 @@ var Args AppArgs
 func usage() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS] <job prefix>\n\nOptions:\n", os.Args[0])
 	flag.PrintDefaults()
+}
+
+func (i *excludeLines) String() string {
+	return ""
+}
+func (i *excludeLines) Set(value string) error {
+	*i = append(*i, value)
+	return nil
 }
 
 func init() {
@@ -43,8 +55,14 @@ func init() {
 	flag.BoolVar(&Args.RunningOnly, "running-only", true, "if unset gets all allocations, not just the running ones")
 	flag.BoolVar(&Args.Sort, "sort-buffer", false, "if set lexicographically sorts messages buffer before writing to stdout")
 	flag.BoolVar(&Args.NoColor, "no-color", false, "if set disables coloring of log lines")
+	var excludes excludeLines
+	flag.Var(&excludes, "exclude", "Log lines to exclude; Can be used multiple times (regular expression)")
 
 	flag.Parse()
+
+	for _, e := range excludes {
+		Args.Excludes = append(Args.Excludes, regexp.MustCompile(e))
+	}
 
 	if flag.NArg() == 0 {
 		flag.Usage()

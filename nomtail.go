@@ -61,7 +61,7 @@ func main() {
 
 		loggersAlive := atomic.LoadInt32(&loggersCount)
 		for i := 0; i < int(loggersAlive); i++ {
-			wg.Done() // artifically set WaitGroup counter to zero so app can exit
+			wg.Done() // artificially set WaitGroup counter to zero so app can exit
 		}
 	}()
 

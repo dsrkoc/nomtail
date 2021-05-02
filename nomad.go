@@ -174,14 +174,15 @@ func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan
 	urlFirst := fmt.Sprintf("%s/v1/client/fs/logs/%s?type=%s&task=%s", Args.Address, allocID, Args.Type, Args.Task)
 
 	url := urlFirst
+	offset := 120
 	if Args.Tail > 0 {
 		// get the first log batch so we can tail it
-		lines, offset, err := getLastLog(urlFirst)
+		lines, _, err := getLastLog(urlFirst)
 		if err != nil {
 			log.Println("Error getting log for allocation "+Color(color, allocID)+":", err)
 			return
 		}
-		url = fmt.Sprintf("%s&offset=%d", url, offset)
+		url = url + fmt.Sprintf("&origin=end&offset=%d", offset)
 
 		if lines != nil {
 			from := len(lines) - Args.Tail - 1
@@ -210,6 +211,7 @@ func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan
 	}
 	defer resp.Body.Close()
 
+	skipFirstLine := Args.Tail > 0
 	reader := bufio.NewReader(resp.Body)
 	for {
 		line, err := reader.ReadBytes('\n')
@@ -222,6 +224,11 @@ func logs(color int, allocID string, bufferWaitTime time.Duration, printLog chan
 				log.Println("Error reading log body for allocation "+Color(color, allocID)+":", err)
 			}
 			return
+		}
+
+		if skipFirstLine && len(line) == offset { // After printing tail we went back offset bytes.
+			skipFirstLine = false				  // No need to print that.
+			continue
 		}
 
 		printLog <- logEntry{color, prefix, strings.TrimRight(string(line), "\n")}

@@ -13,6 +13,18 @@ type logEntry struct {
 }
 type byLogEntry []logEntry
 
+// shouldPrint returns true if msg is ok to be printed,
+// false otherwise. The first exclusion pattern that matches
+// the message dismisses it for printing.
+func shouldPrint(msg string) bool {
+	for _, excludePattern := range Args.Excludes {
+		if excludePattern.MatchString(msg) {
+			return false
+		}
+	}
+	return true
+}
+
 // Lexicographically sorting messages from the buffer
 //
 
@@ -38,15 +50,7 @@ func printLog(collectDur time.Duration, sortBuffer bool, out <-chan logEntry, st
 				sort.Sort(byLogEntry(buffer))
 			}
 			for _, elem := range(buffer) {
-				shouldPrint := true
-				for _, exclude := range Args.Excludes {
-					shouldPrint = !exclude.MatchString(elem.message)
-					if !shouldPrint { // one exclusion found is quite enough, thank you
-						break
-					}
-				}
-
-				if shouldPrint {
+				if shouldPrint(elem.message) {
 					fmt.Println(Color(elem.color, elem.prefix, elem.message))
 				}
 			}
